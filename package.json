@@ -1,0 +1,17 @@
+{
+  "name": "slack-event-handler",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "Anton Klimenko <antklim@gmail.com>",
+  "scripts": {
+    "test": "NODE_ENV=test mocha ./*_test.js"
+  },
+  "devDependencies": {
+    "mocha": "^3.4.2",
+    "sinon": "^2.3.5"
+  },
+  "dependencies": {
+    "aws": "^0.0.3-2"
+  }
+}
