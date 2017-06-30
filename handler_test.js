@@ -19,10 +19,10 @@ describe('Event handler', () => {
       const stub = sandbox.stub(handler, '_handleChallenge')
       stub.callsArg(1) // call callback function from stub
 
-      handler.main({type: "url_verification"}, (err) => {
+      handler.main({type: 'url_verification'}, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
-        assert.deepEqual(stub.args[0][0], {type: "url_verification"})
+        assert.deepEqual(stub.args[0][0], {type: 'url_verification'})
         done()
       })
     })
@@ -31,10 +31,10 @@ describe('Event handler', () => {
       const stub = sandbox.stub(handler, '_handleSlackEvents')
       stub.callsArg(1) // call callback function from stub
 
-      handler.main({type: "event_callback"}, (err) => {
+      handler.main({type: 'event_callback'}, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
-        assert.deepEqual(stub.args[0][0], {type: "event_callback"})
+        assert.deepEqual(stub.args[0][0], {type: 'event_callback'})
         done()
       })
     })
@@ -50,13 +50,13 @@ describe('Event handler', () => {
   describe('_handleChallenge', () => {
     it('responses on challenge', (done) => {
       const data = {
-        "token": "Jhj5dZrVaK7ZwHHjRyZWjbDl",
-        "challenge": "3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P",
-        "type": "url_verification"
+        'token': 'Jhj5dZrVaK7ZwHHjRyZWjbDl',
+        'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P',
+        'type': 'url_verification'
       }
       handler._handleChallenge(data, (err, res) => {
         assert.ifError(err)
-        assert.deepEqual(res, {"challenge": "3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P"})
+        assert.deepEqual(res, {'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P'})
         done()
       })
     })
@@ -68,11 +68,11 @@ describe('Event handler', () => {
       stub.callsArg(1) // call callback function from stub
       const file = {
         timestamp: Date.now(),
-        filetype: "jpg",
-        url_private: "http://example.com"
+        filetype: 'jpg',
+        url_private: 'http://example.com'
       }
 
-      const data = { subtype: "file_share", file }
+      const data = { subtype: 'file_share', file }
 
       handler._handleSlackEvents(data, (err) => {
         assert.ifError(err)
@@ -86,7 +86,7 @@ describe('Event handler', () => {
       const stub = sandbox.stub(handler, '_fetchFile')
       stub.callsArg(1) // call callback function from stub
 
-      handler._handleSlackEvents({subtype: "test"}, (err) => {
+      handler._handleSlackEvents({subtype: 'test'}, (err) => {
         assert.ifError(err)
         assert(stub.notCalled)
         done(err)

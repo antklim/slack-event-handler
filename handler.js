@@ -2,10 +2,10 @@
 
 exports.main = (data, cb) => {
   switch (data.type) {
-    case "url_verification":
+    case 'url_verification':
       exports._handleChallenge(data, cb)
       break
-    case "event_callback":
+    case 'event_callback':
       exports._handleSlackEvents(data, cb)
       break
     default:
@@ -21,7 +21,7 @@ exports._handleChallenge = (data, cb) => {
 
 exports._handleSlackEvents = (data, cb) => {
   switch (data.subtype) {
-    case "file_share":
+    case 'file_share':
       exports._fetchFile(data.file, cb)
       break
     default:
