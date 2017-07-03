@@ -5,7 +5,8 @@
   "license": "MIT",
   "author": "Anton Klimenko <antklim@gmail.com>",
   "scripts": {
-    "test": "NODE_ENV=test mocha ./*_test.js"
+    "test": "NODE_ENV=test mocha ./*_test.js",
+    "zip": "zip -r build/slack-event-handler.zip node_modules/ *.js *.json"
   },
   "devDependencies": {
     "mocha": "^3.4.2",
