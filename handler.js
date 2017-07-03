@@ -7,6 +7,13 @@ exports.main = (data, cb) => {
   debug(`Event type: ${data.type}`)
   debug(`Event data:\n${JSON.stringify(data, null, 2)}`)
 
+  if (data.token !== process.env.VERIFICATION_TOKEN) {
+    const err = new Error('Verification failure')
+    error(err)
+    cb(err.message)
+    return
+  }
+
   switch (data.type) {
     case 'url_verification':
       exports._handleVerification(data, cb)
@@ -23,14 +30,8 @@ exports.main = (data, cb) => {
 }
 
 exports._handleVerification = (data, cb) => {
-  if (data.token !== process.env.VERIFICATION_TOKEN) {
-    const err = new Error('Verification failure')
-    error(err)
-    cb(err.message)
-    return
-  }
-
   cb(null, {challenge: data.challenge})
+  return
 }
 
 exports._handleSlackEvents = (data, cb) => {

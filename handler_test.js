@@ -4,7 +4,16 @@ const handler = require('./handler')
 
 describe('Event handler', () => {
 
+  const token = 'Jhj5dZrVaK7ZwHHjRyZWjbDl'
   let sandbox = null
+
+  before(() => {
+    process.env.VERIFICATION_TOKEN = token
+  })
+
+  after(() => {
+    process.env.VERIFICATION_TOKEN = ''
+  })
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create()
@@ -19,10 +28,10 @@ describe('Event handler', () => {
       const stub = sandbox.stub(handler, '_handleVerification')
       stub.callsArg(1) // call callback function from stub
 
-      handler.main({type: 'url_verification'}, (err) => {
+      handler.main({token, type: 'url_verification'}, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
-        assert.deepEqual(stub.args[0][0], {type: 'url_verification'})
+        assert.deepEqual(stub.args[0][0], {token, type: 'url_verification'})
         done()
       })
     })
@@ -31,16 +40,23 @@ describe('Event handler', () => {
       const stub = sandbox.stub(handler, '_handleSlackEvents')
       stub.callsArg(1) // call callback function from stub
 
-      handler.main({type: 'event_callback'}, (err) => {
+      handler.main({token, type: 'event_callback'}, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
-        assert.deepEqual(stub.args[0][0], {type: 'event_callback'})
+        assert.deepEqual(stub.args[0][0], {token, type: 'event_callback'})
+        done()
+      })
+    })
+
+    it('should return error callback when token is invalid', (done) => {
+      handler.main({token: '123'}, (err, res) => {
+        assert.deepEqual(err, 'Verification failure')
         done()
       })
     })
 
     it('should return error callback for any other event type', (done) => {
-      handler.main({type: 'test'}, (err) => {
+      handler.main({token, type: 'test'}, (err) => {
         assert.deepEqual(err, `Unsupported event type 'test'`)
         done()
       })
@@ -49,28 +65,14 @@ describe('Event handler', () => {
 
   describe('_handleVerification', () => {
     it('responses on challenge when token is valid', (done) => {
-      process.env.VERIFICATION_TOKEN = 'Jhj5dZrVaK7ZwHHjRyZWjbDl'
       const data = {
-        'token': 'Jhj5dZrVaK7ZwHHjRyZWjbDl',
-        'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P',
-        'type': 'url_verification'
+        token: 'Jhj5dZrVaK7ZwHHjRyZWjbDl',
+        challenge: '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P',
+        type: 'url_verification'
       }
       handler._handleVerification(data, (err, res) => {
         assert.ifError(err)
         assert.deepEqual(res, {'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P'})
-        done()
-      })
-    })
-
-    it('should return error callback when token is invalid', (done) => {
-      process.env.VERIFICATION_TOKEN = ''
-      const data = {
-        'token': 'Jhj5dZrVaK7ZwHHjRyZWjbDl',
-        'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P',
-        'type': 'url_verification'
-      }
-      handler._handleVerification(data, (err, res) => {
-        assert.deepEqual(err, 'Verification failure')
         done()
       })
     })
