@@ -1,6 +1,11 @@
 'use strict'
 
+const log = (...args) => (process.env.DEBUG) ? console.log.apply(null, args) : null
+
 exports.main = (data, cb) => {
+  log(`Event type: ${data.type}`)
+  log(`Event data:\n${JSON.stringify(data, null, 2)}`)
+
   switch (data.type) {
     case 'url_verification':
       exports._handleChallenge(data, cb)
