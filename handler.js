@@ -1,10 +1,11 @@
 'use strict'
 
-const log = (...args) => (process.env.DEBUG) ? console.log.apply(null, args) : null
+const debug = (...args) => (process.env.DEBUG) ? console.log.apply(null, args) : null
+const error = (...args) => (process.env.ERROR) ? console.error.apply(null, args) : null
 
 exports.main = (data, cb) => {
-  log(`Event type: ${data.type}`)
-  log(`Event data:\n${JSON.stringify(data, null, 2)}`)
+  debug(`Event type: ${data.type}`)
+  debug(`Event data:\n${JSON.stringify(data, null, 2)}`)
 
   switch (data.type) {
     case 'url_verification':
@@ -14,14 +15,18 @@ exports.main = (data, cb) => {
       exports._handleSlackEvents(data, cb)
       break
     default:
-      cb(new Error(`Unsupported event type '${data.type}'`))
+      const err = new Error(`Unsupported event type '${data.type}'`)
+      error(err)
+      cb(err.message)
       break
   }
 }
 
 exports._handleVerification = (data, cb) => {
   if (data.token !== process.env.VERIFICATION_TOKEN) {
-    cb(new Error('Verification failure'))
+    const err = new Error('Verification failure')
+    error(err)
+    cb(err.message)
     return
   }
 

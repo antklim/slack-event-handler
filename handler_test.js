@@ -41,7 +41,7 @@ describe('Event handler', () => {
 
     it('should return error callback for any other event type', (done) => {
       handler.main({type: 'test'}, (err) => {
-        assert.deepEqual(err, new Error(`Unsupported event type 'test'`))
+        assert.deepEqual(err, `Unsupported event type 'test'`)
         done()
       })
     })
@@ -70,7 +70,7 @@ describe('Event handler', () => {
         'type': 'url_verification'
       }
       handler._handleVerification(data, (err, res) => {
-        assert.deepEqual(err, new Error('Verification failure'))
+        assert.deepEqual(err, 'Verification failure')
         done()
       })
     })
