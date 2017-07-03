@@ -8,7 +8,7 @@ exports.main = (data, cb) => {
 
   switch (data.type) {
     case 'url_verification':
-      exports._handleChallenge(data, cb)
+      exports._handleVerification(data, cb)
       break
     case 'event_callback':
       exports._handleSlackEvents(data, cb)
@@ -19,9 +19,13 @@ exports.main = (data, cb) => {
   }
 }
 
-exports._handleChallenge = (data, cb) => {
+exports._handleVerification = (data, cb) => {
+  if (data.token !== process.env.VERIFICATION_TOKEN) {
+    cb(new Error('Verification failure'))
+    return
+  }
+
   cb(null, {challenge: data.challenge})
-  return
 }
 
 exports._handleSlackEvents = (data, cb) => {

@@ -15,8 +15,8 @@ describe('Event handler', () => {
   })
 
   describe('main', () => {
-    it('should call `handleChallenge` when event type is `url_verification`', (done) => {
-      const stub = sandbox.stub(handler, '_handleChallenge')
+    it('should call `handleVerification` when event type is `url_verification`', (done) => {
+      const stub = sandbox.stub(handler, '_handleVerification')
       stub.callsArg(1) // call callback function from stub
 
       handler.main({type: 'url_verification'}, (err) => {
@@ -47,16 +47,30 @@ describe('Event handler', () => {
     })
   })
 
-  describe('_handleChallenge', () => {
-    it('responses on challenge', (done) => {
+  describe('_handleVerification', () => {
+    it('responses on challenge when token is valid', (done) => {
+      process.env.VERIFICATION_TOKEN = 'Jhj5dZrVaK7ZwHHjRyZWjbDl'
       const data = {
         'token': 'Jhj5dZrVaK7ZwHHjRyZWjbDl',
         'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P',
         'type': 'url_verification'
       }
-      handler._handleChallenge(data, (err, res) => {
+      handler._handleVerification(data, (err, res) => {
         assert.ifError(err)
         assert.deepEqual(res, {'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P'})
+        done()
+      })
+    })
+
+    it('should return error callback when token is invalid', (done) => {
+      process.env.VERIFICATION_TOKEN = ''
+      const data = {
+        'token': 'Jhj5dZrVaK7ZwHHjRyZWjbDl',
+        'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P',
+        'type': 'url_verification'
+      }
+      handler._handleVerification(data, (err, res) => {
+        assert.deepEqual(err, new Error('Verification failure'))
         done()
       })
     })
