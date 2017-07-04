@@ -24,7 +24,7 @@ describe('Event handler', () => {
   })
 
   describe('main', () => {
-    it('should call `handleVerification` when event type is `url_verification`', (done) => {
+    it('should call `_handleVerification` when event type is `url_verification`', (done) => {
       const stub = sandbox.stub(handler, '_handleVerification')
       stub.callsArg(1) // call callback function from stub
 
@@ -48,23 +48,20 @@ describe('Event handler', () => {
       })
     })
 
+    it('should return empty callback for any other event types', (done) => {
+      handler.main({token, type: 'test'}, done)
+    })
+
     it('should return error callback when token is invalid', (done) => {
       handler.main({token: '123'}, (err, res) => {
         assert.deepEqual(err, 'Verification failure')
         done()
       })
     })
-
-    it('should return error callback for any other event type', (done) => {
-      handler.main({token, type: 'test'}, (err) => {
-        assert.deepEqual(err, `Unsupported event type 'test'`)
-        done()
-      })
-    })
   })
 
   describe('_handleVerification', () => {
-    it('responses on challenge when token is valid', (done) => {
+    it('responses on challenge', (done) => {
       const data = {
         token: 'Jhj5dZrVaK7ZwHHjRyZWjbDl',
         challenge: '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P',

@@ -22,9 +22,7 @@ exports.main = (data, cb) => {
       exports._handleSlackEvents(data, cb)
       break
     default:
-      const err = new Error(`Unsupported event type '${data.type}'`)
-      error(err)
-      cb(err.message)
+      cb()
       break
   }
 }
