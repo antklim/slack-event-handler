@@ -6,6 +6,8 @@ const debug = (...args) => (process.env.DEBUG) ? console.log.apply(null, args) :
 const error = (...args) => (process.env.ERROR) ? console.error.apply(null, args) : null
 
 const SUPPORTED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/bmp']
+const sns = new aws.SNS()
+const stepfunctions = new aws.StepFunctions()
 
 exports.main = (data, cb) => {
   debug(`Event type: ${data.type}`)
@@ -68,19 +70,32 @@ exports._handleFileShare = (data, cb) => {
 }
 
 exports._callSns = (notification) => {
+  debug(`Sending ${JSON.stringify(data, null, 2)} to topic: ${process.env.SLACK_INTEGRATOR_SNS}`)
 
+  const params = {
+    Message: JSON.stringify(notification),
+    TopicArn: process.env.SLACK_INTEGRATOR_SNS
+  }
+
+  sns.publish(params, (err) => {
+    if (err) {
+      error(`Notification publish to ${process.env.SLACK_INTEGRATOR_SNS} failed`)
+      error(err)
+      return
+    }
+
+    debug(`Notification successfully published to ${process.env.SLACK_INTEGRATOR_SNS}`)
+  })
 }
 
 exports._callStepFunction = (data) => {
   debug(`Calling ${process.env.SLACK_INTEGRATOR_SF} with input: ${JSON.stringify(data, null, 2)}`)
 
-  const stepfunctions = new AWS.StepFunctions()
   const params = {
     stateMachineArn: process.env.SLACK_INTEGRATOR_SF,
     input: JSON.stringify(data)
   }
 
-  // start a state machine
   stepfunctions.startExecution(params, (err) => {
     if (err) {
       error(`${process.env.SLACK_INTEGRATOR_SF} execution failed`)
