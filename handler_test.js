@@ -131,7 +131,7 @@ describe('Event handler', () => {
         assert.ifError(err)
         assert(stubSns.notCalled)
         assert(stubSFn.calledOnce)
-        assert.deepEqual(stubSFn.args[0][0], {eventId: "EVENTID123", file: 'https://files.slack.com/test.jpeg', msg: 'test photo event'})
+        assert.deepEqual(stubSFn.args[0][0], {eventId: "EVENTID123", url: 'https://files.slack.com/test.jpeg', msg: 'test photo event'})
         done(err)
       })
     })

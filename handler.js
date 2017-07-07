@@ -59,10 +59,10 @@ exports._handleFileShare = (data, cb) => {
     return
   }
 
-  const file = data.event.file.url_private
+  const url = data.event.file.url_private
   const msg = data.event.file.initial_comment.comment
 
-  exports._callStepFunction({eventId, file, msg})
+  exports._callStepFunction({eventId, url, msg})
   cb()
   return
 }
@@ -72,5 +72,22 @@ exports._callSns = (notification) => {
 }
 
 exports._callStepFunction = (data) => {
+  debug(`Calling ${process.env.SLACK_INTEGRATOR_SF} with input: ${JSON.stringify(data, null, 2)}`)
 
+  const stepfunctions = new AWS.StepFunctions()
+  const params = {
+    stateMachineArn: process.env.SLACK_INTEGRATOR_SF,
+    input: JSON.stringify(data)
+  }
+
+  // start a state machine
+  stepfunctions.startExecution(params, (err) => {
+    if (err) {
+      error(`${process.env.SLACK_INTEGRATOR_SF} execution failed`)
+      error(err)
+      return
+    }
+
+    debug(`Started ${process.env.SLACK_INTEGRATOR_SF} execution`)
+  });
 }
