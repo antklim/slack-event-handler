@@ -1,0 +1,71 @@
+{
+    "token": "Jhj5dZrVaK7ZwHHjRyZWjbDl",
+    "team_id": "123",
+    "api_app_id": "xyz123",
+    "event": {
+        "type": "message",
+        "subtype": "file_share",
+        "text": "<@user|username> uploaded a file: <https://files.slack.com/test0.jpeg> and commented: test photo event",
+        "file": {
+            "id": "FILEID123",
+            "created": 1499081897,
+            "timestamp": 1499081897,
+            "name": "test.jpeg",
+            "title": "test.jpeg",
+            "mimetype": "image/jpeg",
+            "filetype": "jpg",
+            "pretty_type": "JPEG",
+            "user": "user",
+            "editable": false,
+            "size": 53571,
+            "mode": "hosted",
+            "is_external": false,
+            "external_type": "",
+            "is_public": true,
+            "public_url_shared": false,
+            "display_as_bot": false,
+            "username": "",
+            "url_private": "https://files.slack.com/test.jpeg",
+            "url_private_download": "https://files.slack.com/test1.jpeg",
+            "thumb_64": "https://files.slack.com/test_64.jpg",
+            "thumb_80": "https://files.slack.com/test_80.jpg",
+            "thumb_360": "https://files.slack.com/test_360.jpg",
+            "thumb_360_w": 160,
+            "thumb_360_h": 240,
+            "thumb_160": "https://files.slack.com/test_160.jpg",
+            "image_exif_rotation": 1,
+            "original_w": 160,
+            "original_h": 240,
+            "permalink": "https://files.slack.com/test2.jpeg",
+            "permalink_public": "https://files.slack.com/test3.jpeg",
+            "channels": [
+                "XYZ123ABC"
+            ],
+            "groups": [],
+            "ims": [],
+            "comments_count": 1,
+            "initial_comment": {
+                "id": "Ab12C45678",
+                "created": 1499081897,
+                "timestamp": 1499081897,
+                "user": "user",
+                "is_intro": true,
+                "comment": "test photo event"
+            }
+        },
+        "user": "user",
+        "upload": true,
+        "display_as_bot": false,
+        "username": "username",
+        "bot_id": null,
+        "ts": "1499081899.737651",
+        "channel": "XYZ123ABC",
+        "event_ts": "1499081899.737651"
+    },
+    "type": "event_callback",
+    "authed_users": [
+        "AAABBBCCC"
+    ],
+    "event_id": "EVENTID123",
+    "event_time": 1499081899
+}

@@ -1,6 +1,9 @@
 const assert = require('assert')
 const sinon = require('sinon')
 const handler = require('./handler')
+const cloneDeep = require('clone-deep')
+
+const slackEventPayload = require('./slack-event-example')
 
 describe('Event handler', () => {
 
@@ -40,10 +43,10 @@ describe('Event handler', () => {
       const stub = sandbox.stub(handler, '_handleSlackEvents')
       stub.callsArg(1) // call callback function from stub
 
-      handler.main({token, type: 'event_callback'}, (err) => {
+      handler.main(slackEventPayload, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
-        assert.deepEqual(stub.args[0][0], {token, type: 'event_callback'})
+        assert.deepEqual(stub.args[0][0], slackEventPayload)
         done()
       })
     })
@@ -76,30 +79,26 @@ describe('Event handler', () => {
   })
 
   describe('_handleSlackEvents', () => {
-    it('should call `_fetchFile` when event subtype is `file_share`', (done) => {
-      const stub = sandbox.stub(handler, '_fetchFile')
+    it('should call `_handleFileShare` when event subtype is `file_share`', (done) => {
+      const stub = sandbox.stub(handler, '_handleFileShare')
       stub.callsArg(1) // call callback function from stub
-      const file = {
-        timestamp: Date.now(),
-        filetype: 'jpg',
-        url_private: 'http://example.com'
-      }
 
-      const data = { subtype: 'file_share', file }
-
-      handler._handleSlackEvents(data, (err) => {
+      handler._handleSlackEvents(slackEventPayload, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
-        assert.deepEqual(stub.args[0][0], file)
+        assert.deepEqual(stub.args[0][0], slackEventPayload)
         done()
       })
     })
 
     it('should call empty callback for any other event subtype', (done) => {
-      const stub = sandbox.stub(handler, '_fetchFile')
+      const stub = sandbox.stub(handler, '_handleFileShare')
       stub.callsArg(1) // call callback function from stub
 
-      handler._handleSlackEvents({subtype: 'test'}, (err) => {
+      let payload = cloneDeep(slackEventPayload)
+      payload.event.subtype = 'test'
+
+      handler._handleSlackEvents(payload, (err) => {
         assert.ifError(err)
         assert(stub.notCalled)
         done(err)
@@ -107,8 +106,35 @@ describe('Event handler', () => {
     })
   })
 
-  describe('_fetchFile', () => {
-    it('should call `file_fetcher` via step function')
+  describe('_handleFileShare', () => {
+    it('should send notification to SNS when file type is not supported', (done) => {
+      const stubSns = sandbox.stub(handler, '_callSns')
+      const stubSFn = sandbox.stub(handler, '_callStepFunction')
+
+      let payload = cloneDeep(slackEventPayload)
+      payload.event.file.mimetype = 'image/gif'
+
+      handler._handleFileShare(payload, (err) => {
+        assert.ifError(err)
+        assert(stubSns.calledOnce)
+        assert.deepEqual(stubSns.args[0][0], {eventId: "EVENTID123", err: `Unsupported mimetype: image/gif`})
+        assert(stubSFn.notCalled)
+        done(err)
+      })
+    })
+
+    it('should call step function with file url, message and event id', (done) => {
+      const stubSns = sandbox.stub(handler, '_callSns')
+      const stubSFn = sandbox.stub(handler, '_callStepFunction')
+
+      handler._handleFileShare(slackEventPayload, (err) => {
+        assert.ifError(err)
+        assert(stubSns.notCalled)
+        assert(stubSFn.calledOnce)
+        assert.deepEqual(stubSFn.args[0][0], {eventId: "EVENTID123", file: 'https://files.slack.com/test.jpeg', msg: 'test photo event'})
+        done(err)
+      })
+    })
   })
 
 })

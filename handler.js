@@ -1,7 +1,11 @@
 'use strict'
 
+const aws = require('aws-sdk')
+
 const debug = (...args) => (process.env.DEBUG) ? console.log.apply(null, args) : null
 const error = (...args) => (process.env.ERROR) ? console.error.apply(null, args) : null
+
+const SUPPORTED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/bmp']
 
 exports.main = (data, cb) => {
   debug(`Event type: ${data.type}`)
@@ -33,9 +37,9 @@ exports._handleVerification = (data, cb) => {
 }
 
 exports._handleSlackEvents = (data, cb) => {
-  switch (data.subtype) {
+  switch (data.event.subtype) {
     case 'file_share':
-      exports._fetchFile(data.file, cb)
+      exports._handleFileShare(data, cb)
       break
     default:
       cb()
@@ -43,7 +47,30 @@ exports._handleSlackEvents = (data, cb) => {
   }
 }
 
-exports._fetchFile = (data, cb) => {
+exports._handleFileShare = (data, cb) => {
+  const eventId = data.event_id
+  const mimetype = data.event.file.mimetype.toLowerCase()
+
+  if (!SUPPORTED_MIME_TYPES.includes(mimetype)) {
+    const err = `Unsupported mimetype: ${mimetype}`
+    error(err)
+    exports._callSns({eventId, err})
+    cb()
+    return
+  }
+
+  const file = data.event.file.url_private
+  const msg = data.event.file.initial_comment.comment
+
+  exports._callStepFunction({eventId, file, msg})
   cb()
   return
+}
+
+exports._callSns = (notification) => {
+
+}
+
+exports._callStepFunction = (data) => {
+
 }

@@ -9,10 +9,12 @@
     "zip": "zip -r build/slack-event-handler.zip node_modules/ *.js *.json"
   },
   "devDependencies": {
+    "clone-deep": "^0.3.0",
     "mocha": "^3.4.2",
     "sinon": "^2.3.5"
   },
   "dependencies": {
-    "aws": "^0.0.3-2"
+    "aws": "^0.0.3-2",
+    "aws-sdk": "^2.82.0"
   }
 }
