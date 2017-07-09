@@ -1,22 +1,17 @@
+// This should be set before `handler` require to set proper token for handler
+process.env.VERIFICATION_TOKEN = 'Jhj5dZrVaK7ZwHHjRyZWjbDl'
+
 const assert = require('assert')
 const sinon = require('sinon')
-const handler = require('./handler')
 const cloneDeep = require('clone-deep')
 
+const handler = require('./handler')
 const slackEventPayload = require('./slack-event-example')
 
 describe('Event handler', () => {
 
   const token = 'Jhj5dZrVaK7ZwHHjRyZWjbDl'
   let sandbox = null
-
-  before(() => {
-    process.env.VERIFICATION_TOKEN = token
-  })
-
-  after(() => {
-    process.env.VERIFICATION_TOKEN = ''
-  })
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create()

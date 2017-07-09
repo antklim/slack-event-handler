@@ -2,18 +2,28 @@
 
 const aws = require('aws-sdk')
 
-const debug = (...args) => (process.env.DEBUG) ? console.log.apply(null, args) : null
-const error = (...args) => (process.env.ERROR) ? console.error.apply(null, args) : null
-
+/**
+ * DEBUG (optional)     - allows debug information logging
+ * ERROR (optional)     - allows error information logging
+ * VERIFICATION_TOKEN   - Slack team token, used in app registration in Slack
+ * SLACK_INTEGRATOR_SNS - AWS SNS topic name to send Slack message processing information
+ * SLACK_INTEGRATOR_SF  - AWS Step Function ARN to initiate Slack message processing
+ */
+const {DEBUG, ERROR, VERIFICATION_TOKEN,
+  SLACK_INTEGRATOR_SNS, SLACK_INTEGRATOR_SF} = process.env
 const SUPPORTED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/bmp']
+
 const sns = new aws.SNS()
 const stepfunctions = new aws.StepFunctions()
+
+const debug = (...args) => (DEBUG) ? console.log.apply(null, args) : null
+const error = (...args) => (ERROR) ? console.error.apply(null, args) : null
 
 exports.main = (data, cb) => {
   debug(`Event type: ${data.type}`)
   debug(`Event data:\n${JSON.stringify(data, null, 2)}`)
 
-  if (data.token !== process.env.VERIFICATION_TOKEN) {
+  if (data.token !== VERIFICATION_TOKEN) {
     const err = new Error('Verification failure')
     error(err)
     cb(err.message)
@@ -70,39 +80,39 @@ exports._handleFileShare = (data, cb) => {
 }
 
 exports._callSns = (notification) => {
-  debug(`Sending ${JSON.stringify(data, null, 2)} to topic: ${process.env.SLACK_INTEGRATOR_SNS}`)
+  debug(`Sending ${JSON.stringify(notification, null, 2)} to topic: ${SLACK_INTEGRATOR_SNS}`)
 
   const params = {
     Message: JSON.stringify(notification),
-    TopicArn: process.env.SLACK_INTEGRATOR_SNS
+    TopicArn: SLACK_INTEGRATOR_SNS
   }
 
   sns.publish(params, (err) => {
     if (err) {
-      error(`Notification publish to ${process.env.SLACK_INTEGRATOR_SNS} failed`)
+      error(`Notification publish to ${SLACK_INTEGRATOR_SNS} failed`)
       error(err)
       return
     }
 
-    debug(`Notification successfully published to ${process.env.SLACK_INTEGRATOR_SNS}`)
+    debug(`Notification successfully published to ${SLACK_INTEGRATOR_SNS}`)
   })
 }
 
 exports._callStepFunction = (data) => {
-  debug(`Calling ${process.env.SLACK_INTEGRATOR_SF} with input: ${JSON.stringify(data, null, 2)}`)
+  debug(`Calling ${SLACK_INTEGRATOR_SF} with input: ${JSON.stringify(data, null, 2)}`)
 
   const params = {
-    stateMachineArn: process.env.SLACK_INTEGRATOR_SF,
+    stateMachineArn: SLACK_INTEGRATOR_SF,
     input: JSON.stringify(data)
   }
 
   stepfunctions.startExecution(params, (err) => {
     if (err) {
-      error(`${process.env.SLACK_INTEGRATOR_SF} execution failed`)
+      error(`${SLACK_INTEGRATOR_SF} execution failed`)
       error(err)
       return
     }
 
-    debug(`Started ${process.env.SLACK_INTEGRATOR_SF} execution`)
+    debug(`Started ${SLACK_INTEGRATOR_SF} execution`)
   });
 }
