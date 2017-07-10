@@ -112,7 +112,7 @@ describe('Event handler', () => {
       handler._handleFileShare(payload, (err) => {
         assert.ifError(err)
         assert(stubSns.calledOnce)
-        assert.deepEqual(stubSns.args[0][0], {eventId: "EVENTID123", err: `Unsupported mimetype: image/gif`})
+        assert.deepEqual(stubSns.args[0][0], {eventId: 'EVENTID123', channel: 'XYZ123ABC', err: `Unsupported mimetype: image/gif`})
         assert(stubSFn.notCalled)
         done(err)
       })
@@ -126,7 +126,7 @@ describe('Event handler', () => {
         assert.ifError(err)
         assert(stubSns.notCalled)
         assert(stubSFn.calledOnce)
-        assert.deepEqual(stubSFn.args[0][0], {eventId: "EVENTID123", url: 'https://files.slack.com/test.jpeg', msg: 'test photo event'})
+        assert.deepEqual(stubSFn.args[0][0], {eventId: 'EVENTID123', channel: 'XYZ123ABC', url: 'https://files.slack.com/test.jpeg', msg: 'test photo event'})
         done(err)
       })
     })

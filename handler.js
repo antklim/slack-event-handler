@@ -61,12 +61,14 @@ exports._handleSlackEvents = (data, cb) => {
 
 exports._handleFileShare = (data, cb) => {
   const eventId = data.event_id
+  const channel = data.event.channel
   const mimetype = data.event.file.mimetype.toLowerCase()
 
   if (!SUPPORTED_MIME_TYPES.includes(mimetype)) {
     const err = `Unsupported mimetype: ${mimetype}`
     error(err)
-    exports._callSns({eventId, err})
+    exports._callSns({eventId, channel, err})
+    // Always send positive callback to Slack
     cb()
     return
   }
@@ -74,7 +76,7 @@ exports._handleFileShare = (data, cb) => {
   const url = data.event.file.url_private
   const msg = data.event.file.initial_comment.comment
 
-  exports._callStepFunction({eventId, url, msg})
+  exports._callStepFunction({eventId, channel, url, msg})
   cb()
   return
 }
