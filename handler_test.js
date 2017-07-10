@@ -2,8 +2,8 @@
 process.env.VERIFICATION_TOKEN = 'Jhj5dZrVaK7ZwHHjRyZWjbDl'
 
 const assert = require('assert')
-const sinon = require('sinon')
 const cloneDeep = require('clone-deep')
+const sinon = require('sinon')
 
 const handler = require('./handler')
 const slackEventPayload = require('./slack-event-example')
@@ -90,7 +90,7 @@ describe('Event handler', () => {
       const stub = sandbox.stub(handler, '_handleFileShare')
       stub.callsArg(1) // call callback function from stub
 
-      let payload = cloneDeep(slackEventPayload)
+      const payload = cloneDeep(slackEventPayload)
       payload.event.subtype = 'test'
 
       handler._handleSlackEvents(payload, (err) => {
@@ -106,7 +106,7 @@ describe('Event handler', () => {
       const stubSns = sandbox.stub(handler, '_callSns')
       const stubSFn = sandbox.stub(handler, '_callStepFunction')
 
-      let payload = cloneDeep(slackEventPayload)
+      const payload = cloneDeep(slackEventPayload)
       payload.event.file.mimetype = 'image/gif'
 
       handler._handleFileShare(payload, (err) => {
