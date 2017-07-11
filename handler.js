@@ -1,7 +1,5 @@
 'use strict'
 
-const aws = require('aws-sdk')
-
 /**
  * DEBUG (optional)     - allows debug information logging
  * ERROR (optional)     - allows error information logging
@@ -13,13 +11,10 @@ const {DEBUG, ERROR, VERIFICATION_TOKEN,
   SLACK_INTEGRATOR_SNS, SLACK_INTEGRATOR_SF} = process.env
 const SUPPORTED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/bmp']
 
-const sns = new aws.SNS()
-const stepfunctions = new aws.StepFunctions()
-
 const debug = (...args) => (DEBUG) ? console.log.apply(null, args) : null
 const error = (...args) => (ERROR) ? console.error.apply(null, args) : null
 
-exports.main = (data, cb) => {
+exports.main = (data, aws, cb) => {
   debug(`Event type: ${data.type}`)
   debug(`Event data:\n${JSON.stringify(data, null, 2)}`)
 
@@ -32,10 +27,10 @@ exports.main = (data, cb) => {
 
   switch (data.type) {
     case 'url_verification':
-      exports._handleVerification(data, cb)
+      exports._handleVerification(data, aws, cb)
       break
     case 'event_callback':
-      exports._handleSlackEvents(data, cb)
+      exports._handleSlackEvents(data, aws, cb)
       break
     default:
       cb()
@@ -43,15 +38,15 @@ exports.main = (data, cb) => {
   }
 }
 
-exports._handleVerification = (data, cb) => {
+exports._handleVerification = (data, aws, cb) => {
   cb(null, {challenge: data.challenge})
   return
 }
 
-exports._handleSlackEvents = (data, cb) => {
+exports._handleSlackEvents = (data, aws, cb) => {
   switch (data.event.subtype) {
     case 'file_share':
-      exports._handleFileShare(data, cb)
+      exports._handleFileShare(data, aws, cb)
       break
     default:
       cb()
@@ -59,7 +54,7 @@ exports._handleSlackEvents = (data, cb) => {
   }
 }
 
-exports._handleFileShare = (data, cb) => {
+exports._handleFileShare = (data, aws, cb) => {
   const eventId = data.event_id
   const channel = data.event.channel
   const mimetype = data.event.file.mimetype.toLowerCase()
@@ -67,7 +62,7 @@ exports._handleFileShare = (data, cb) => {
   if (!SUPPORTED_MIME_TYPES.includes(mimetype)) {
     const err = `Unsupported mimetype: ${mimetype}`
     error(err)
-    exports._callSns({eventId, channel, err})
+    exports._callSns(aws.sns, SLACK_INTEGRATOR_SNS, {eventId, channel, err})
     // Always send positive callback to Slack
     cb()
     return
@@ -76,45 +71,45 @@ exports._handleFileShare = (data, cb) => {
   const url = data.event.file.url_private
   const msg = data.event.file.initial_comment.comment
 
-  exports._callStepFunction({eventId, channel, url, msg})
+  exports._callStepFunction(aws.stepfunctions, SLACK_INTEGRATOR_SF, {eventId, channel, url, msg})
   cb()
   return
 }
 
-exports._callSns = (notification) => {
-  debug(`Sending ${JSON.stringify(notification, null, 2)} to topic: ${SLACK_INTEGRATOR_SNS}`)
+exports._callSns = (sns, topic, notification) => {
+  debug(`Sending ${JSON.stringify(notification, null, 2)} to topic: ${topic}`)
 
   const params = {
     Message: JSON.stringify(notification),
-    TopicArn: SLACK_INTEGRATOR_SNS
+    TopicArn: topic
   }
 
   sns.publish(params, (err) => {
     if (err) {
-      error(`Notification publish to ${SLACK_INTEGRATOR_SNS} failed`)
+      error(`Notification publish to ${topic} failed`)
       error(err)
       return
     }
 
-    debug(`Notification successfully published to ${SLACK_INTEGRATOR_SNS}`)
+    debug(`Notification successfully published to ${topic}`)
   })
 }
 
-exports._callStepFunction = (data) => {
-  debug(`Calling ${SLACK_INTEGRATOR_SF} with input: ${JSON.stringify(data, null, 2)}`)
+exports._callStepFunction = (stepfunctions, func, data) => {
+  debug(`Calling ${func} with input: ${JSON.stringify(data, null, 2)}`)
 
   const params = {
-    stateMachineArn: SLACK_INTEGRATOR_SF,
+    stateMachineArn: func,
     input: JSON.stringify(data)
   }
 
   stepfunctions.startExecution(params, (err) => {
     if (err) {
-      error(`${SLACK_INTEGRATOR_SF} execution failed`)
+      error(`${func} execution failed`)
       error(err)
       return
     }
 
-    debug(`Started ${SLACK_INTEGRATOR_SF} execution`)
+    debug(`Started ${func} execution`)
   });
 }

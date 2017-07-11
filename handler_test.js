@@ -1,7 +1,10 @@
 // This should be set before `handler` require to set proper token for handler
 process.env.VERIFICATION_TOKEN = 'Jhj5dZrVaK7ZwHHjRyZWjbDl'
+process.env.SLACK_INTEGRATOR_SNS = 'testSNSTopic'
+process.env.SLACK_INTEGRATOR_SF = 'testStepFunction'
 
 const assert = require('assert')
+const AWS = require('aws-sdk')
 const cloneDeep = require('clone-deep')
 const sinon = require('sinon')
 
@@ -11,6 +14,10 @@ const slackEventPayload = require('./slack-event-example')
 describe('Event handler', () => {
 
   const token = 'Jhj5dZrVaK7ZwHHjRyZWjbDl'
+  const sns = new AWS.SNS()
+  const stepfunctions = new AWS.StepFunctions()
+  const aws = {sns, stepfunctions}
+
   let sandbox = null
 
   beforeEach(() => {
@@ -24,9 +31,9 @@ describe('Event handler', () => {
   describe('main', () => {
     it('should call `_handleVerification` when event type is `url_verification`', (done) => {
       const stub = sandbox.stub(handler, '_handleVerification')
-      stub.callsArg(1) // call callback function from stub
+      stub.yields()
 
-      handler.main({token, type: 'url_verification'}, (err) => {
+      handler.main({token, type: 'url_verification'}, aws, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
         assert.deepEqual(stub.args[0][0], {token, type: 'url_verification'})
@@ -36,9 +43,9 @@ describe('Event handler', () => {
 
     it('should call `_handleSlackEvents` when event type is `event_callback`', (done) => {
       const stub = sandbox.stub(handler, '_handleSlackEvents')
-      stub.callsArg(1) // call callback function from stub
+      stub.yields()
 
-      handler.main(slackEventPayload, (err) => {
+      handler.main(slackEventPayload, aws, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
         assert.deepEqual(stub.args[0][0], slackEventPayload)
@@ -47,11 +54,11 @@ describe('Event handler', () => {
     })
 
     it('should return empty callback for any other event types', (done) => {
-      handler.main({token, type: 'test'}, done)
+      handler.main({token, type: 'test'}, aws, done)
     })
 
     it('should return error callback when token is invalid', (done) => {
-      handler.main({token: '123'}, (err, res) => {
+      handler.main({token: '123'}, aws, (err, res) => {
         assert.deepEqual(err, 'Verification failure')
         done()
       })
@@ -65,7 +72,7 @@ describe('Event handler', () => {
         challenge: '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P',
         type: 'url_verification'
       }
-      handler._handleVerification(data, (err, res) => {
+      handler._handleVerification(data, aws, (err, res) => {
         assert.ifError(err)
         assert.deepEqual(res, {'challenge': '3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P'})
         done()
@@ -76,9 +83,9 @@ describe('Event handler', () => {
   describe('_handleSlackEvents', () => {
     it('should call `_handleFileShare` when event subtype is `file_share`', (done) => {
       const stub = sandbox.stub(handler, '_handleFileShare')
-      stub.callsArg(1) // call callback function from stub
+      stub.yields()
 
-      handler._handleSlackEvents(slackEventPayload, (err) => {
+      handler._handleSlackEvents(slackEventPayload, aws, (err) => {
         assert.ifError(err)
         assert(stub.calledOnce)
         assert.deepEqual(stub.args[0][0], slackEventPayload)
@@ -88,12 +95,12 @@ describe('Event handler', () => {
 
     it('should call empty callback for any other event subtype', (done) => {
       const stub = sandbox.stub(handler, '_handleFileShare')
-      stub.callsArg(1) // call callback function from stub
+      stub.yields()
 
       const payload = cloneDeep(slackEventPayload)
       payload.event.subtype = 'test'
 
-      handler._handleSlackEvents(payload, (err) => {
+      handler._handleSlackEvents(payload, aws, (err) => {
         assert.ifError(err)
         assert(stub.notCalled)
         done(err)
@@ -109,10 +116,11 @@ describe('Event handler', () => {
       const payload = cloneDeep(slackEventPayload)
       payload.event.file.mimetype = 'image/gif'
 
-      handler._handleFileShare(payload, (err) => {
+      handler._handleFileShare(payload, aws, (err) => {
         assert.ifError(err)
         assert(stubSns.calledOnce)
-        assert.deepEqual(stubSns.args[0][0], {eventId: 'EVENTID123', channel: 'XYZ123ABC', err: `Unsupported mimetype: image/gif`})
+        assert.equal(stubSns.args[0][1], 'testSNSTopic')
+        assert.deepEqual(stubSns.args[0][2], {eventId: 'EVENTID123', channel: 'XYZ123ABC', err: `Unsupported mimetype: image/gif`})
         assert(stubSFn.notCalled)
         done(err)
       })
@@ -122,14 +130,22 @@ describe('Event handler', () => {
       const stubSns = sandbox.stub(handler, '_callSns')
       const stubSFn = sandbox.stub(handler, '_callStepFunction')
 
-      handler._handleFileShare(slackEventPayload, (err) => {
+      handler._handleFileShare(slackEventPayload, aws, (err) => {
         assert.ifError(err)
         assert(stubSns.notCalled)
         assert(stubSFn.calledOnce)
-        assert.deepEqual(stubSFn.args[0][0], {eventId: 'EVENTID123', channel: 'XYZ123ABC', url: 'https://files.slack.com/test.jpeg', msg: 'test photo event'})
+        assert.equal(stubSFn.args[0][1], 'testStepFunction')
+        assert.deepEqual(stubSFn.args[0][2], {eventId: 'EVENTID123', channel: 'XYZ123ABC', url: 'https://files.slack.com/test.jpeg', msg: 'test photo event'})
         done(err)
       })
     })
   })
 
+  describe('_callSns', () => {
+    it('should send notification to SNS')
+  })
+
+  describe('_callStepFunction', () => {
+    it('should call step function')
+  })
 })
