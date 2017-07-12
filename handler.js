@@ -62,21 +62,38 @@ exports._handleFileShare = (data, aws, cb) => {
   if (!SUPPORTED_MIME_TYPES.includes(mimetype)) {
     const err = `Unsupported mimetype: ${mimetype}`
     error(err)
-    exports._callSns(aws.sns, SLACK_INTEGRATOR_SNS, {eventId, channel, err})
-    // Always send positive callback to Slack
-    cb()
+
+    exports._callSns(aws.sns, SLACK_INTEGRATOR_SNS, {eventId, channel, err}, (err) => {
+      if (err) {
+        error(`Notification publish to ${SLACK_INTEGRATOR_SNS} failed`)
+        error(err)
+      } else {
+        debug(`Notification successfully published to ${SLACK_INTEGRATOR_SNS}`)
+      }
+
+      // Always send positive callback to Slack
+      cb()
+    })
     return
   }
 
   const url = data.event.file.url_private
   const msg = data.event.file.initial_comment.comment
 
-  exports._callStepFunction(aws.stepfunctions, SLACK_INTEGRATOR_SF, {eventId, channel, url, msg})
-  cb()
-  return
+  exports._callStepFunction(aws.stepfunctions, SLACK_INTEGRATOR_SF, {eventId, channel, url, msg}, (err) => {
+    if (err) {
+      error(`${SLACK_INTEGRATOR_SF} execution failed`)
+      error(err)
+    } else {
+      debug(`Started ${SLACK_INTEGRATOR_SF} execution`)
+    }
+
+    // Always send positive callback to Slack
+    cb()
+  })
 }
 
-exports._callSns = (sns, topic, notification) => {
+exports._callSns = (sns, topic, notification, cb) => {
   debug(`Sending ${JSON.stringify(notification, null, 2)} to topic: ${topic}`)
 
   const params = {
@@ -84,18 +101,10 @@ exports._callSns = (sns, topic, notification) => {
     TopicArn: topic
   }
 
-  sns.publish(params, (err) => {
-    if (err) {
-      error(`Notification publish to ${topic} failed`)
-      error(err)
-      return
-    }
-
-    debug(`Notification successfully published to ${topic}`)
-  })
+  sns.publish(params, cb)
 }
 
-exports._callStepFunction = (stepfunctions, func, data) => {
+exports._callStepFunction = (stepfunctions, func, data, cb) => {
   debug(`Calling ${func} with input: ${JSON.stringify(data, null, 2)}`)
 
   const params = {
@@ -103,13 +112,5 @@ exports._callStepFunction = (stepfunctions, func, data) => {
     input: JSON.stringify(data)
   }
 
-  stepfunctions.startExecution(params, (err) => {
-    if (err) {
-      error(`${func} execution failed`)
-      error(err)
-      return
-    }
-
-    debug(`Started ${func} execution`)
-  });
+  stepfunctions.startExecution(params, cb)
 }

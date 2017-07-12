@@ -113,6 +113,8 @@ describe('Event handler', () => {
       const stubSns = sandbox.stub(handler, '_callSns')
       const stubSFn = sandbox.stub(handler, '_callStepFunction')
 
+      stubSns.yields()
+
       const payload = cloneDeep(slackEventPayload)
       payload.event.file.mimetype = 'image/gif'
 
@@ -130,6 +132,8 @@ describe('Event handler', () => {
       const stubSns = sandbox.stub(handler, '_callSns')
       const stubSFn = sandbox.stub(handler, '_callStepFunction')
 
+      stubSFn.yields()
+
       handler._handleFileShare(slackEventPayload, aws, (err) => {
         assert.ifError(err)
         assert(stubSns.notCalled)
@@ -142,10 +146,40 @@ describe('Event handler', () => {
   })
 
   describe('_callSns', () => {
-    it('should send notification to SNS')
+    it('should send notification to SNS', (done) => {
+      const publish = sandbox.stub()
+      publish.yields()
+      const sns = {publish}
+
+      handler._callSns(sns, 'testSNSTopic', {hello: 'test'}, (err) => {
+        assert(publish.calledOnce)
+
+        const expectedParams = {
+          Message: JSON.stringify({hello: 'test'}),
+          TopicArn: 'testSNSTopic'
+        }
+        assert.deepEqual(publish.args[0][0], expectedParams)
+        done()
+      })
+    })
   })
 
   describe('_callStepFunction', () => {
-    it('should call step function')
+    it('should call step function', (done) => {
+      const startExecution = sandbox.stub()
+      startExecution.yields()
+      const stepfunctions = {startExecution}
+
+      handler._callStepFunction(stepfunctions, 'testStepFunction', {hello: 'test'}, (err) => {
+        assert(startExecution.calledOnce)
+
+        const expectedParams = {
+          stateMachineArn: 'testStepFunction',
+          input: JSON.stringify({hello: 'test'})
+        }
+        assert.deepEqual(startExecution.args[0][0], expectedParams)
+        done()
+      })
+    })
   })
 })
