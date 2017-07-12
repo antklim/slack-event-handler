@@ -8,7 +8,7 @@ const stepfunctions = new aws.StepFunctions()
 
 exports.handler = (event, context, cb) => {
 
-  handler.main(event, cb)
+  handler.main(event, {sns, stepfunctions}, cb)
   return
 
 }
